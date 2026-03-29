@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trello Card Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #16161f;
+  --bg-card-hover: #1c1c28;
+  --bg-input: #1a1a26;
+  --border: #2a2a3a;
+  --border-focus: #d4a843;
+  --text-primary: #e8e6e3;
+  --text-secondary: #8a8a9a;
+  --text-muted: #55556a;
+  --accent: #d4a843;
+  --accent-dim: rgba(212, 168, 67, 0.15);
+  --accent-glow: rgba(212, 168, 67, 0.3);
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+  --archived: #a78bfa;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --transition: 0.2s ease;
+  --font-display: 'JetBrains Mono', monospace;
+  --font-body: 'Outfit', sans-serif;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f3f1ee;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8f7f5;
+  --bg-input: #f0eeeb;
+  --border: #ddd8d0;
+  --border-focus: #b8872e;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6a6a6a;
+  --text-muted: #aaa;
+  --accent: #b8872e;
+  --accent-dim: rgba(184, 135, 46, 0.1);
+  --accent-glow: rgba(184, 135, 46, 0.2);
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* HEADER */
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+.logo span { color: var(--text-muted); font-weight: 400; }
+
+.board-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* BUTTONS */
+.btn {
+  font-family: var(--font-body);
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn:hover { border-color: var(--accent); background: var(--accent-dim); }
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.btn-primary:hover { background: #e0b44f; border-color: #e0b44f; }
+
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 8px; width: 36px; height: 36px; justify-content: center; }
+
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: rgba(248,113,113,0.1); }
+
+/* SETUP SCREEN */
+.setup-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 65px);
+  padding: 24px;
+}
+
+.setup-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+.setup-card h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+.setup-card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* FORM ELEMENTS */
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: var(--font-display);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: var(--font-body);
+  transition: border-color var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.form-group input::placeholder { color: var(--text-muted); }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* MAIN LAYOUT */
+.main-content {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+/* STATS BAR */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: all var(--transition);
+}
+
+.stat-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-family: var(--font-display);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* FILTER BAR */
+.filter-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.filter-bar .search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px 8px 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-body);
+}
+
+.filter-bar .search-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-wrapper::before {
+  content: '⌕';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-width: 130px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.filter-date {
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-body);
+}
+
+.filter-date:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+/* ACTION BAR */
+.action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.results-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+}
+
+.results-count strong { color: var(--accent); }
+
+/* TABLE */
+.table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead {
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+thead th {
+  padding: 12px 14px;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color var(--transition);
+}
+
+thead th:hover { color: var(--accent); }
+thead th.sorted { color: var(--accent); }
+thead th .sort-arrow { margin-left: 4px; font-size: 10px; }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+tbody tr:hover { background: var(--bg-card-hover); }
+tbody tr:last-child { border-bottom: none; }
+
+tbody tr.selected { background: var(--accent-dim); }
+
+td {
+  padding: 10px 14px;
+  vertical-align: top;
+  max-width: 400px;
+}
+
+td.title-cell {
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+td.title-cell a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+td.title-cell a:hover { color: var(--accent); }
+
+.cell-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-display);
+}
+
+.badge-active { background: rgba(74,222,128,0.15); color: var(--success); }
+.badge-archived { background: rgba(167,139,250,0.15); color: var(--archived); }
+
+.label-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.labels-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.label-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+/* CHECKBOX */
+.checkbox-cell { width: 40px; text-align: center; }
+
+.custom-checkbox {
+  width: 16px;
+  height: 16px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition);
+}
+
+.custom-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.custom-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* TIMELINE */
+.timeline-toggle {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font-display);
+  transition: color var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline-toggle:hover { color: var(--accent); }
+
+.timeline-row { display: none; }
+.timeline-row.open { display: table-row; }
+
+.timeline-cell {
+  padding: 0 14px 14px 54px !important;
+  background: var(--bg-secondary);
+}
+
+.timeline-content {
+  border-left: 2px solid var(--border);
+  padding-left: 16px;
+}
+
+.timeline-event {
+  position: relative;
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.timeline-event::before {
+  content: '';
+  position: absolute;
+  left: -21px;
+  top: 11px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--bg-secondary);
+}
+
+.timeline-event:first-child::before { background: var(--accent); }
+
+.timeline-event .tl-date {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.timeline-event .tl-action { color: var(--text-primary); }
+.timeline-event .tl-user { color: var(--accent); font-weight: 500; }
+
+/* LOADING OVERLAY */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,15,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+[data-theme="light"] .loading-overlay {
+  background: rgba(243,241,238,0.85);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  margin-top: 16px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.loading-progress {
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* SETTINGS MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  max-width: 560px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.modal h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--accent);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal h2 .close-modal {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 20px;
+  transition: color var(--transition);
+}
+
+.modal h2 .close-modal:hover { color: var(--text-primary); }
+
+.modal .section-label {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 20px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+  z-index: 2000;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  font-family: var(--font-display);
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error { border-left: 3px solid var(--danger); }
+.toast.info { border-left: 3px solid var(--info); }
+
+/* PAGINATION */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination button {
+  padding: 6px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  transition: all var(--transition);
+}
+
+.pagination button:hover { border-color: var(--accent); color: var(--accent); }
+.pagination button.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-info {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  margin: 0 8px;
+}
+
+/* REFRESH INDICATOR */
+.refresh-indicator {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* KEYBOARD SHORTCUTS HINT */
+.shortcuts-hint {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+}
+
+.shortcuts-hint kbd {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  margin: 0 2px;
+}
+
+/* LIST BREAKDOWN */
+.breakdown-bar {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.breakdown-segment {
+  height: 100%;
+  min-width: 4px;
+  transition: all var(--transition);
+}
+
+.breakdown-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .header { padding: 12px 16px; }
+  .main-content { padding: 12px 16px; }
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .filter-bar { flex-direction: column; }
+  .filter-select, .filter-date { width: 100%; }
+  .search-wrapper { width: 100%; }
+  td { font-size: 12px; padding: 8px 10px; }
+  .setup-card { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">TCT<span>racker</span></div>
+    <div class="board-name" id="boardNameBadge" style="display:none">—</div>
+  </div>
+  <div class="header-right">
+    <div class="refresh-indicator" id="refreshIndicator" style="display:none">
+      <span class="pulse-dot"></span>
+      <span id="refreshLabel">Auto-refresh: OFF</span>
+    </div>
+    <button class="btn btn-sm" id="themeToggle" title="Toggle theme">🌙</button>
+    <button class="btn btn-sm" id="settingsBtn" title="Settings">⚙️ Settings</button>
+  </div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen" class="setup-screen">
+  <div class="setup-card">
+    <h2>⚡ Connect to Trello</h2>
+    <p>Enter your Trello API credentials and board ID to start tracking card origins.</p>
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="text" id="setupApiKey" placeholder="Your Trello API key">
+    </div>
+    <div class="form-group">
+      <label>API Token</label>
+      <input type="password" id="setupToken" placeholder="Your Trello API token">
+    </div>
+    <div class="form-group">
+      <label>Board ID</label>
+      <input type="text" id="setupBoardId" placeholder="e.g., 5f4d3c2b1a (from board URL)">
+    </div>
+    <div class="form-group" style="margin-top: 8px; margin-bottom: 24px">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; letter-spacing: 0">
+        <input type="checkbox" id="setupRemember" checked style="width:auto">
+        Remember credentials in browser
+      </label>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="connectToTrello()">Connect & Scan</button>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until connected) -->
+<div id="appScreen" style="display:none">
+  <div class="main-content">
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Total Cards</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-sub" id="statTotalSub">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active</div>
+        <div class="stat-value" id="statActive">0</div>
+        <div class="stat-sub" id="statActiveSub">on the board</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Archived</div>
+        <div class="stat-value" id="statArchived">0</div>
+        <div class="stat-sub" id="statArchivedSub">closed cards</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Lists Touched</div>
+        <div class="stat-value" id="statLists">0</div>
+        <div class="stat-sub" id="statListsSub">—</div>
+        <div class="breakdown-bar" id="listBreakdownBar"></div>
+        <div class="breakdown-legend" id="listBreakdownLegend"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Writers Involved</div>
+        <div class="stat-value" id="statWriters">0</div>
+        <div class="stat-sub" id="statWritersSub">—</div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="search-wrapper">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search titles... (Ctrl+F)">
+      </div>
+      <select class="filter-select" id="filterCreator">
+        <option value="">Creator: All</option>
+      </select>
+      <select class="filter-select" id="filterList">
+        <option value="">List: All</option>
+      </select>
+      <select class="filter-select" id="filterLabel">
+        <option value="">Label: All</option>
+      </select>
+      <select class="filter-select" id="filterStatus">
+        <option value="">Status: All</option>
+        <option value="active">Active</option>
+        <option value="archived">Archived</option>
+      </select>
+      <input type="date" class="filter-date" id="filterDateFrom" title="From date">
+      <input type="date" class="filter-date" id="filterDateTo" title="To date">
+      <button class="btn btn-sm" onclick="clearFilters()" title="Clear all filters">✕ Clear</button>
+    </div>
+
+    <!-- ACTION BAR -->
+    <div class="action-bar">
+      <div class="action-bar-left">
+        <span class="results-count">
+          Showing <strong id="showingCount">0</strong> of <strong id="totalCount">0</strong> cards
+          <span id="selectedInfo" style="display:none"> · <strong id="selectedCount">0</strong> selected</span>
+        </span>
+      </div>
+      <div class="action-bar-right">
+        <button class="btn btn-sm" onclick="copySelectedTitles()" id="copySelectedBtn" style="display:none">📋 Copy Selected</button>
+        <button class="btn btn-sm" onclick="copyAllTitles()">📋 Copy All Titles</button>
+        <button class="btn btn-sm" onclick="exportCSV()">📤 Export CSV</button>
+        <button class="btn btn-sm" onclick="fetchData()" title="Refresh now">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-container">
+      <div class="table-wrapper">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th class="checkbox-cell"><input type="checkbox" class="custom-checkbox" id="selectAll"></th>
+              <th data-sort="title">Title <span class="sort-arrow"></span></th>
+              <th data-sort="creator">Added By <span class="sort-arrow"></span></th>
+              <th data-sort="list">Current List <span class="sort-arrow"></span></th>
+              <th data-sort="labels">Labels</th>
+              <th data-sort="members">Members</th>
+              <th data-sort="status">Status <span class="sort-arrow"></span></th>
+              <th data-sort="date">Date Added <span class="sort-arrow"></span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination" id="pagination"></div>
+
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="empty-icon">🔍</div>
+        <h3>No cards found</h3>
+        <p>Try adjusting your filters or search query.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>
+      ⚙️ Settings
+      <span class="close-modal" onclick="closeSettings()">✕</span>
+    </h2>
+
+    <div class="section-label">API Credentials</div>
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="text" id="settApiKey">
+    </div>
+    <div class="form-group">
+      <label>API Token</label>
+      <input type="password" id="settToken">
+    </div>
+    <div class="form-group">
+      <label>Board ID</label>
+      <input type="text" id="settBoardId">
+    </div>
+
+    <div class="section-label">Display</div>
+    <div class="form-group">
+      <label>Results Per Page</label>
+      <select id="settPerPage">
+        <option value="25">25</option>
+        <option value="50" selected>50</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Default Sort</label>
+      <select id="settDefaultSort">
+        <option value="date-desc">Date Added (Newest first)</option>
+        <option value="date-asc">Date Added (Oldest first)</option>
+        <option value="title-asc">Title (A-Z)</option>
+        <option value="title-desc">Title (Z-A)</option>
+      </select>
+    </div>
+
+    <div class="section-label">Auto-Refresh</div>
+    <div class="form-group">
+      <label>Refresh Interval</label>
+      <select id="settRefreshInterval">
+        <option value="0">Disabled</option>
+        <option value="60">Every 1 minute</option>
+        <option value="300">Every 5 minutes</option>
+        <option value="600">Every 10 minutes</option>
+        <option value="1800">Every 30 minutes</option>
+      </select>
+    </div>
+
+    <div class="section-label">Danger Zone</div>
+    <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="margin-top: 8px">🗑️ Clear All Saved Data</button>
+
+    <div style="margin-top: 24px; display: flex; gap: 8px; justify-content: flex-end">
+      <button class="btn btn-sm" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Connecting to Trello...</div>
+  <div class="loading-progress" id="loadingProgress"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- KEYBOARD SHORTCUTS -->
+<div class="shortcuts-hint" id="shortcutsHint" style="display:none">
+  <kbd>Ctrl</kbd>+<kbd>F</kbd> Search &nbsp;
+  <kbd>Ctrl</kbd>+<kbd>C</kbd> Copy selected &nbsp;
+  <kbd>R</kbd> Refresh
+</div>
+
+<script>
+// ========================================
+// STATE
+// ========================================
+let STATE = {
+  apiKey: '',
+  token: '',
+  boardId: '',
+  boardName: '',
+  members: [],
+  lists: [],
+  labels: [],
+  cards: [],        // processed cards
+  rawActions: [],
+  filtered: [],
+  selected: new Set(),
+  currentPage: 1,
+  perPage: 50,
+  sortField: 'date',
+  sortDir: 'desc',
+  refreshInterval: 0,
+  refreshTimer: null,
+  timelineCache: {},
+};
+
+// ========================================
+// INIT
+// ========================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadSavedSettings();
+  setupEventListeners();
+  applyTheme();
+
+  // If we have saved credentials, auto-connect
+  if (STATE.apiKey && STATE.token && STATE.boardId) {
+    document.getElementById('setupScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    document.getElementById('shortcutsHint').style.display = 'block';
+    fetchData();
+  }
+});
+
+function loadSavedSettings() {
+  const saved = localStorage.getItem('tct_settings');
+  if (saved) {
+    const s = JSON.parse(saved);
+    STATE.apiKey = s.apiKey || '';
+    STATE.token = s.token || '';
+    STATE.boardId = s.boardId || '';
+    STATE.perPage = s.perPage || 50;
+    STATE.sortField = s.sortField || 'date';
+    STATE.sortDir = s.sortDir || 'desc';
+    STATE.refreshInterval = s.refreshInterval || 0;
+
+    // Pre-fill setup form
+    document.getElementById('setupApiKey').value = STATE.apiKey;
+    document.getElementById('setupToken').value = STATE.token;
+    document.getElementById('setupBoardId').value = STATE.boardId;
+  }
+}
+
+function saveAllSettings() {
+  localStorage.setItem('tct_settings', JSON.stringify({
+    apiKey: STATE.apiKey,
+    token: STATE.token,
+    boardId: STATE.boardId,
+    perPage: STATE.perPage,
+    sortField: STATE.sortField,
+    sortDir: STATE.sortDir,
+    refreshInterval: STATE.refreshInterval,
+  }));
+}
+
+function setupEventListeners() {
+  // Theme toggle
+  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+  // Settings
+  document.getElementById('settingsBtn').addEventListener('click', openSettings);
+
+  // Select all checkbox
+  document.getElementById('selectAll').addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => {
+      cb.checked = e.target.checked;
+      const id = cb.dataset.id;
+      if (e.target.checked) STATE.selected.add(id);
+      else STATE.selected.delete(id);
+      cb.closest('tr').classList.toggle('selected', e.target.checked);
+    });
+    updateSelectedUI();
+  });
+
+  // Filters
+  document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 250));
+  document.getElementById('filterCreator').addEventListener('change', applyFilters);
+  document.getElementById('filterList').addEventListener('change', applyFilters);
+  document.getElementById('filterLabel').addEventListener('change', applyFilters);
+  document.getElementById('filterStatus').addEventListener('change', applyFilters);
+  document.getElementById('filterDateFrom').addEventListener('change', applyFilters);
+  document.getElementById('filterDateTo').addEventListener('change', applyFilters);
+
+  // Sort headers
+  document.querySelectorAll('thead th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.dataset.sort;
+      if (STATE.sortField === field) {
+        STATE.sortDir = STATE.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        STATE.sortField = field;
+        STATE.sortDir = 'asc';
+      }
+      applyFilters();
+    });
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'f') {
+      e.preventDefault();
+      document.getElementById('searchInput').focus();
+    }
+    if (e.key === 'r' && !e.ctrlKey && document.activeElement.tagName !== 'INPUT') {
+      fetchData();
+    }
+    if (e.ctrlKey && e.key === 'c' && STATE.selected.size > 0 && document.activeElement.tagName !== 'INPUT') {
+      copySelectedTitles();
+    }
+  });
+}
+
+// ========================================
+// THEME
+// ========================================
+function applyTheme() {
+  const theme = localStorage.getItem('tct_theme') || 'dark';
+  document.documentElement.dataset.theme = theme;
+  document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.dataset.theme;
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('tct_theme', next);
+  document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+
+// ========================================
+// CONNECT
+// ========================================
+async function connectToTrello() {
+  STATE.apiKey = document.getElementById('setupApiKey').value.trim();
+  STATE.token = document.getElementById('setupToken').value.trim();
+  STATE.boardId = document.getElementById('setupBoardId').value.trim();
+
+  if (!STATE.apiKey || !STATE.token || !STATE.boardId) {
+    showToast('Please fill in all fields', 'error');
+    return;
+  }
+
+  if (document.getElementById('setupRemember').checked) {
+    saveAllSettings();
+  }
+
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('shortcutsHint').style.display = 'block';
+
+  await fetchData();
+}
+
+// ========================================
+// FETCH DATA
+// ========================================
+async function fetchData() {
+  showLoading('Connecting to Trello...');
+
+  try {
+    // 1. Fetch board info
+    updateLoading('Fetching board info...', '');
+    const boardInfo = await trelloGet(`/boards/${STATE.boardId}?fields=name`);
+    STATE.boardName = boardInfo.name;
+    document.getElementById('boardNameBadge').textContent = boardInfo.name;
+    document.getElementById('boardNameBadge').style.display = 'inline';
+
+    // 2. Fetch members
+    updateLoading('Loading members...', '');
+    STATE.members = await trelloGet(`/boards/${STATE.boardId}/members`);
+
+    // 3. Fetch all lists (including archived)
+    updateLoading('Loading lists...', '');
+    STATE.lists = await trelloGet(`/boards/${STATE.boardId}/lists?filter=all`);
+
+    // 4. Fetch labels
+    updateLoading('Loading labels...', '');
+    STATE.labels = await trelloGet(`/boards/${STATE.boardId}/labels`);
+
+    // 5. Fetch ALL cards (active + archived)
+    updateLoading('Loading all cards...', '');
+    const activeCards = await trelloGet(`/boards/${STATE.boardId}/cards?fields=name,idList,labels,closed,desc,url,idMembers,dateLastActivity,shortUrl&limit=1000`);
+    const closedCards = await trelloGet(`/boards/${STATE.boardId}/cards/closed?fields=name,idList,labels,closed,desc,url,idMembers,dateLastActivity,shortUrl&limit=1000`);
+    const allCards = [...activeCards, ...closedCards];
+
+    // Dedupe by id
+    const cardMap = new Map();
+    allCards.forEach(c => cardMap.set(c.id, c));
+
+    // 6. Fetch createCard actions (paginated)
+    updateLoading('Scanning card history...', 'This may take a moment for large boards');
+    const createActions = await fetchAllActions(STATE.boardId, 'createCard,copyCard,moveCardToBoard');
+
+    // 7. Build combined card data
+    updateLoading('Processing data...', `${createActions.length} card creation events found`);
+
+    const processedCards = [];
+    const actionsByCard = {};
+
+    createActions.forEach(action => {
+      const cardId = action.data?.card?.id;
+      if (!cardId) return;
+      if (!actionsByCard[cardId]) actionsByCard[cardId] = [];
+      actionsByCard[cardId].push(action);
+    });
+
+    // For each createCard action, merge with card data
+    for (const [cardId, actions] of Object.entries(actionsByCard)) {
+      const createAction = actions[0]; // earliest create action
+      const cardData = cardMap.get(cardId);
+
+      const creator = createAction.memberCreator;
+      const createdDate = createAction.date;
+      const initialList = createAction.data?.list?.name || 'Unknown';
+
+      // Get current list name
+      let currentListName = 'Unknown';
+      if (cardData) {
+        const list = STATE.lists.find(l => l.id === cardData.idList);
+        currentListName = list ? list.name : 'Unknown';
+      }
+
+      // Get member names
+      let memberNames = [];
+      if (cardData && cardData.idMembers) {
+        memberNames = cardData.idMembers.map(mid => {
+          const m = STATE.members.find(mem => mem.id === mid);
+          return m ? m.fullName : 'Unknown';
+        });
+      }
+
+      processedCards.push({
+        id: cardId,
+        title: cardData?.name || createAction.data?.card?.name || 'Untitled',
+        creator: creator?.fullName || 'Unknown',
+        creatorId: creator?.id || '',
+        currentList: currentListName,
+        currentListId: cardData?.idList || '',
+        initialList: initialList,
+        labels: cardData?.labels || [],
+        members: memberNames,
+        memberIds: cardData?.idMembers || [],
+        status: cardData ? (cardData.closed ? 'archived' : 'active') : 'deleted',
+        dateAdded: createdDate,
+        url: cardData?.shortUrl || cardData?.url || `https://trello.com/c/${createAction.data?.card?.shortLink || ''}`,
+        desc: cardData?.desc || '',
+        dateLastActivity: cardData?.dateLastActivity || createdDate,
+      });
+    }
+
+    STATE.cards = processedCards;
+    STATE.rawActions = createActions;
+
+    // Populate filters
+    populateFilters();
+    applyFilters();
+    updateStats();
+    setupAutoRefresh();
+
+    hideLoading();
+    showToast(`Loaded ${processedCards.length} cards from "${STATE.boardName}"`, 'success');
+
+  } catch (err) {
+    hideLoading();
+    showToast('Error: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+async function fetchAllActions(boardId, filter) {
+  let allActions = [];
+  let before = null;
+  let page = 0;
+  const limit = 1000;
+
+  while (true) {
+    page++;
+    updateLoading('Scanning card history...', `Page ${page} · ${allActions.length} events so far`);
+
+    let url = `/boards/${boardId}/actions?filter=${filter}&limit=${limit}`;
+    if (before) url += `&before=${before}`;
+
+    const actions = await trelloGet(url);
+    if (!actions || actions.length === 0) break;
+
+    allActions = allActions.concat(actions);
+    before = actions[actions.length - 1].date;
+
+    // Safety limit
+    if (page > 20) break;
+    if (actions.length < limit) break;
+  }
+
+  return allActions;
+}
+
+// ========================================
+// API HELPER
+// ========================================
+async function trelloGet(path) {
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `https://api.trello.com/1${path}${sep}key=${STATE.apiKey}&token=${STATE.token}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Trello API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
+// ========================================
+// FILTERS
+// ========================================
+function populateFilters() {
+  // Creator filter
+  const creatorSelect = document.getElementById('filterCreator');
+  const uniqueCreators = [...new Set(STATE.cards.map(c => c.creator))].sort();
+  creatorSelect.innerHTML = '<option value="">Creator: All</option>';
+  uniqueCreators.forEach(name => {
+    creatorSelect.innerHTML += `<option value="${esc(name)}">${esc(name)}</option>`;
+  });
+
+  // List filter
+  const listSelect = document.getElementById('filterList');
+  listSelect.innerHTML = '<option value="">List: All</option>';
+  STATE.lists.forEach(l => {
+    listSelect.innerHTML += `<option value="${esc(l.name)}">${esc(l.name)}${l.closed ? ' (archived)' : ''}</option>`;
+  });
+
+  // Label filter
+  const labelSelect = document.getElementById('filterLabel');
+  labelSelect.innerHTML = '<option value="">Label: All</option>';
+  STATE.labels.filter(l => l.name).forEach(l => {
+    labelSelect.innerHTML += `<option value="${esc(l.name)}">${esc(l.name)}</option>`;
+  });
+}
+
+function applyFilters() {
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+  const creator = document.getElementById('filterCreator').value;
+  const list = document.getElementById('filterList').value;
+  const label = document.getElementById('filterLabel').value;
+  const status = document.getElementById('filterStatus').value;
+  const dateFrom = document.getElementById('filterDateFrom').value;
+  const dateTo = document.getElementById('filterDateTo').value;
+
+  let filtered = STATE.cards.filter(card => {
+    if (search && !card.title.toLowerCase().includes(search)) return false;
+    if (creator && card.creator !== creator) return false;
+    if (list && card.currentList !== list) return false;
+    if (label && !card.labels.some(l => l.name === label)) return false;
+    if (status && card.status !== status) return false;
+    if (dateFrom && card.dateAdded < dateFrom) return false;
+    if (dateTo && card.dateAdded > dateTo + 'T23:59:59Z') return false;
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    let va, vb;
+    switch (STATE.sortField) {
+      case 'title': va = a.title.toLowerCase(); vb = b.title.toLowerCase(); break;
+      case 'creator': va = a.creator.toLowerCase(); vb = b.creator.toLowerCase(); break;
+      case 'list': va = a.currentList.toLowerCase(); vb = b.currentList.toLowerCase(); break;
+      case 'status': va = a.status; vb = b.status; break;
+      case 'date': va = a.dateAdded; vb = b.dateAdded; break;
+      default: va = a.dateAdded; vb = b.dateAdded;
+    }
+    if (va < vb) return STATE.sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return STATE.sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  STATE.filtered = filtered;
+  STATE.currentPage = 1;
+
+  // Update sort headers
+  document.querySelectorAll('thead th[data-sort]').forEach(th => {
+    th.classList.remove('sorted');
+    th.querySelector('.sort-arrow').textContent = '';
+    if (th.dataset.sort === STATE.sortField) {
+      th.classList.add('sorted');
+      th.querySelector('.sort-arrow').textContent = STATE.sortDir === 'asc' ? '↑' : '↓';
+    }
+  });
+
+  renderTable();
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterCreator').value = '';
+  document.getElementById('filterList').value = '';
+  document.getElementById('filterLabel').value = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterDateFrom').value = '';
+  document.getElementById('filterDateTo').value = '';
+  applyFilters();
+}
+
+// ========================================
+// RENDER TABLE
+// ========================================
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const data = STATE.filtered;
+  const totalPages = Math.ceil(data.length / STATE.perPage);
+  const start = (STATE.currentPage - 1) * STATE.perPage;
+  const end = start + STATE.perPage;
+  const pageData = data.slice(start, end);
+
+  document.getElementById('showingCount').textContent = data.length;
+  document.getElementById('totalCount').textContent = STATE.cards.length;
+
+  if (data.length === 0) {
+    tbody.innerHTML = '';
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('emptyState').style.display = 'none';
+
+  let html = '';
+  pageData.forEach(card => {
+    const isSelected = STATE.selected.has(card.id);
+    const dateStr = formatDate(card.dateAdded);
+    const labelsHtml = card.labels.map(l =>
+      `<span class="label-tag" style="background:${l.color ? trelloColor(l.color) : '#666'}">${esc(l.name || l.color)}</span>`
+    ).join('');
+    const membersHtml = card.members.map(m => esc(m)).join(', ') || '<span style="color:var(--text-muted)">—</span>';
+    const statusBadge = card.status === 'archived'
+      ? '<span class="badge badge-archived">Archived</span>'
+      : card.status === 'deleted'
+        ? '<span class="badge" style="background:rgba(248,113,113,0.15);color:var(--danger)">Deleted</span>'
+        : '<span class="badge badge-active">Active</span>';
+
+    html += `
+      <tr class="${isSelected ? 'selected' : ''}" data-id="${card.id}">
+        <td class="checkbox-cell">
+          <input type="checkbox" class="custom-checkbox row-checkbox" data-id="${card.id}" ${isSelected ? 'checked' : ''}>
+        </td>
+        <td class="title-cell">
+          <a href="${esc(card.url)}" target="_blank" title="Open in Trello">${esc(card.title)}</a>
+        </td>
+        <td class="cell-meta">${esc(card.creator)}</td>
+        <td class="cell-meta">${esc(card.currentList)}</td>
+        <td><div class="labels-cell">${labelsHtml || '<span style="color:var(--text-muted)">—</span>'}</div></td>
+        <td class="cell-meta">${membersHtml}</td>
+        <td>${statusBadge}</td>
+        <td class="cell-meta" style="white-space:nowrap">${dateStr}</td>
+        <td>
+          <span class="timeline-toggle" onclick="toggleTimeline('${card.id}', this)" title="View card lifecycle">
+            ▶ History
+          </span>
+        </td>
+      </tr>
+      <tr class="timeline-row" id="tl-${card.id}">
+        <td colspan="9" class="timeline-cell">
+          <div class="timeline-content" id="tl-content-${card.id}">
+            <div style="color:var(--text-muted);font-size:12px;font-family:var(--font-display)">Loading timeline...</div>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+
+  // Row checkbox listeners
+  document.querySelectorAll('.row-checkbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      if (e.target.checked) STATE.selected.add(id);
+      else STATE.selected.delete(id);
+      e.target.closest('tr').classList.toggle('selected', e.target.checked);
+      updateSelectedUI();
+    });
+  });
+
+  // Pagination
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const pag = document.getElementById('pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+
+  let html = `<button ${STATE.currentPage === 1 ? 'disabled' : ''} onclick="goPage(${STATE.currentPage - 1})">‹ Prev</button>`;
+
+  const range = getPageRange(STATE.currentPage, totalPages);
+  range.forEach(p => {
+    if (p === '...') {
+      html += `<span class="page-info">…</span>`;
+    } else {
+      html += `<button class="${p === STATE.currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    }
+  });
+
+  html += `<button ${STATE.currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${STATE.currentPage + 1})">Next ›</button>`;
+  pag.innerHTML = html;
+}
+
+function getPageRange(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = [];
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+    pages.push(i);
+  }
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+function goPage(p) {
+  STATE.currentPage = p;
+  renderTable();
+  document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ========================================
+// TIMELINE
+// ========================================
+async function toggleTimeline(cardId, toggleEl) {
+  const row = document.getElementById(`tl-${cardId}`);
+  const isOpen = row.classList.contains('open');
+
+  if (isOpen) {
+    row.classList.remove('open');
+    toggleEl.textContent = '▶ History';
+    return;
+  }
+
+  row.classList.add('open');
+  toggleEl.textContent = '▼ History';
+
+  // Check cache
+  if (STATE.timelineCache[cardId]) {
+    renderTimeline(cardId, STATE.timelineCache[cardId]);
+    return;
+  }
+
+  try {
+    const actions = await trelloGet(`/cards/${cardId}/actions?limit=50`);
+    STATE.timelineCache[cardId] = actions;
+    renderTimeline(cardId, actions);
+  } catch (err) {
+    document.getElementById(`tl-content-${cardId}`).innerHTML =
+      `<div style="color:var(--danger);font-size:12px">Failed to load: ${esc(err.message)}</div>`;
+  }
+}
+
+function renderTimeline(cardId, actions) {
+  const container = document.getElementById(`tl-content-${cardId}`);
+  if (!actions.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px">No history available</div>';
+    return;
+  }
+
+  const html = actions.map(a => {
+    const date = formatDate(a.date);
+    const user = a.memberCreator?.fullName || 'Unknown';
+    const desc = describeAction(a);
+    return `
+      <div class="timeline-event">
+        <span class="tl-user">${esc(user)}</span>
+        <span class="tl-action">${desc}</span>
+        <div class="tl-date">${date}</div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+function describeAction(action) {
+  const d = action.data;
+  switch (action.type) {
+    case 'createCard': return `created this card in <strong>${esc(d.list?.name || '?')}</strong>`;
+    case 'updateCard':
+      if (d.listAfter) return `moved from <strong>${esc(d.listBefore?.name || '?')}</strong> → <strong>${esc(d.listAfter?.name || '?')}</strong>`;
+      if (d.old?.closed === false && d.card?.closed) return 'archived this card';
+      if (d.old?.closed === true && d.card?.closed === false) return 'unarchived this card';
+      if (d.old?.name) return `renamed card`;
+      if (d.old?.desc !== undefined) return 'updated description';
+      return 'updated card';
+    case 'addMemberToCard': return `added <strong>${esc(d.member?.name || 'someone')}</strong>`;
+    case 'removeMemberFromCard': return `removed <strong>${esc(d.member?.name || 'someone')}</strong>`;
+    case 'addLabelToCard': return `added label <strong>${esc(d.label?.name || d.label?.color || '?')}</strong>`;
+    case 'removeLabelFromCard': return `removed label <strong>${esc(d.label?.name || d.label?.color || '?')}</strong>`;
+    case 'commentCard': return `commented: "${esc(truncate(d.text, 80))}"`;
+    case 'copyCard': return `copied from another card`;
+    case 'moveCardToBoard': return `moved to this board`;
+    case 'addAttachmentToCard': return 'added attachment';
+    case 'deleteAttachmentFromCard': return 'removed attachment';
+    case 'addChecklistToCard': return `added checklist <strong>${esc(d.checklist?.name || '?')}</strong>`;
+    default: return action.type.replace(/([A-Z])/g, ' $1').toLowerCase();
+  }
+}
+
+// ========================================
+// STATS
+// ========================================
+function updateStats() {
+  const cards = STATE.cards;
+  const active = cards.filter(c => c.status === 'active').length;
+  const archived = cards.filter(c => c.status === 'archived').length;
+
+  document.getElementById('statTotal').textContent = cards.length;
+  document.getElementById('statTotalSub').textContent = `from "${STATE.boardName}"`;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statArchived').textContent = archived;
+
+  // Lists breakdown
+  const listCounts = {};
+  cards.forEach(c => {
+    listCounts[c.currentList] = (listCounts[c.currentList] || 0) + 1;
+  });
+  const listEntries = Object.entries(listCounts).sort((a, b) => b[1] - a[1]);
+  document.getElementById('statLists').textContent = listEntries.length;
+  document.getElementById('statListsSub').textContent = listEntries.length > 0
+    ? `Top: ${listEntries[0][0]} (${listEntries[0][1]})`
+    : '—';
+
+  // Breakdown bar
+  const colors = ['#d4a843', '#60a5fa', '#4ade80', '#f87171', '#a78bfa', '#fb923c', '#2dd4bf', '#f472b6', '#94a3b8'];
+  const barEl = document.getElementById('listBreakdownBar');
+  const legendEl = document.getElementById('listBreakdownLegend');
+  barEl.innerHTML = '';
+  legendEl.innerHTML = '';
+  listEntries.slice(0, 8).forEach(([name, count], i) => {
+    const pct = (count / cards.length * 100);
+    barEl.innerHTML += `<div class="breakdown-segment" style="width:${pct}%;background:${colors[i % colors.length]}" title="${name}: ${count}"></div>`;
+    legendEl.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:${colors[i % colors.length]}"></span>${name} (${count})</div>`;
+  });
+
+  // Writers
+  const writerCounts = {};
+  cards.forEach(c => {
+    c.members.forEach(m => {
+      writerCounts[m] = (writerCounts[m] || 0) + 1;
+    });
+  });
+  const writerEntries = Object.entries(writerCounts).sort((a, b) => b[1] - a[1]);
+  document.getElementById('statWriters').textContent = writerEntries.length;
+  document.getElementById('statWritersSub').textContent = writerEntries.length > 0
+    ? `Top: ${writerEntries[0][0]} (${writerEntries[0][1]})`
+    : '—';
+}
+
+// ========================================
+// SELECTION & COPY
+// ========================================
+function updateSelectedUI() {
+  const count = STATE.selected.size;
+  const info = document.getElementById('selectedInfo');
+  const btn = document.getElementById('copySelectedBtn');
+  if (count > 0) {
+    info.style.display = 'inline';
+    btn.style.display = 'inline-flex';
+    document.getElementById('selectedCount').textContent = count;
+  } else {
+    info.style.display = 'none';
+    btn.style.display = 'none';
+  }
+}
+
+function copySelectedTitles() {
+  const titles = STATE.filtered
+    .filter(c => STATE.selected.has(c.id))
+    .map(c => c.title);
+  if (titles.length === 0) { showToast('No cards selected', 'error'); return; }
+  navigator.clipboard.writeText(titles.join('\n'));
+  showToast(`Copied ${titles.length} titles to clipboard`, 'success');
+}
+
+function copyAllTitles() {
+  const titles = STATE.filtered.map(c => c.title);
+  if (titles.length === 0) { showToast('No cards to copy', 'error'); return; }
+  navigator.clipboard.writeText(titles.join('\n'));
+  showToast(`Copied ${titles.length} titles to clipboard`, 'success');
+}
+
+function exportCSV() {
+  const headers = ['Title', 'Added By', 'Current List', 'Labels', 'Members', 'Status', 'Date Added', 'URL'];
+  const rows = STATE.filtered.map(c => [
+    `"${c.title.replace(/"/g, '""')}"`,
+    `"${c.creator}"`,
+    `"${c.currentList}"`,
+    `"${c.labels.map(l => l.name || l.color).join(', ')}"`,
+    `"${c.members.join(', ')}"`,
+    c.status,
+    c.dateAdded,
+    c.url
+  ]);
+
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `trello-cards-${STATE.boardName}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${rows.length} cards to CSV`, 'success');
+}
+
+// ========================================
+// SETTINGS MODAL
+// ========================================
+function openSettings() {
+  document.getElementById('settApiKey').value = STATE.apiKey;
+  document.getElementById('settToken').value = STATE.token;
+  document.getElementById('settBoardId').value = STATE.boardId;
+  document.getElementById('settPerPage').value = STATE.perPage;
+  document.getElementById('settRefreshInterval').value = STATE.refreshInterval;
+
+  const sortVal = `${STATE.sortField}-${STATE.sortDir}`;
+  document.getElementById('settDefaultSort').value = sortVal;
+
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  STATE.apiKey = document.getElementById('settApiKey').value.trim();
+  STATE.token = document.getElementById('settToken').value.trim();
+  STATE.boardId = document.getElementById('settBoardId').value.trim();
+  STATE.perPage = parseInt(document.getElementById('settPerPage').value);
+  STATE.refreshInterval = parseInt(document.getElementById('settRefreshInterval').value);
+
+  const sortParts = document.getElementById('settDefaultSort').value.split('-');
+  STATE.sortField = sortParts[0];
+  STATE.sortDir = sortParts[1];
+
+  saveAllSettings();
+  setupAutoRefresh();
+  closeSettings();
+  showToast('Settings saved', 'success');
+  applyFilters();
+}
+
+function clearAllData() {
+  if (confirm('This will clear all saved credentials and data. Continue?')) {
+    localStorage.removeItem('tct_settings');
+    localStorage.removeItem('tct_theme');
+    location.reload();
+  }
+}
+
+// ========================================
+// AUTO-REFRESH
+// ========================================
+function setupAutoRefresh() {
+  if (STATE.refreshTimer) clearInterval(STATE.refreshTimer);
+
+  const indicator = document.getElementById('refreshIndicator');
+  const label = document.getElementById('refreshLabel');
+
+  if (STATE.refreshInterval > 0) {
+    indicator.style.display = 'flex';
+    const mins = STATE.refreshInterval >= 60 ? `${STATE.refreshInterval / 60}m` : `${STATE.refreshInterval}s`;
+    label.textContent = `Auto: ${mins}`;
+    STATE.refreshTimer = setInterval(() => fetchData(), STATE.refreshInterval * 1000);
+  } else {
+    indicator.style.display = 'none';
+  }
+}
+
+// ========================================
+// UTILITIES
+// ========================================
+function showLoading(text) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingProgress').textContent = '';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function updateLoading(text, progress) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingProgress').textContent = progress;
+}
+
+function hideLoading() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = `toast ${type}`;
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) +
+    ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function esc(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function truncate(str, len) {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len) + '…' : str;
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function trelloColor(color) {
+  const map = {
+    green: '#61bd4f', yellow: '#f2d600', orange: '#ff9f1a', red: '#eb5a46',
+    purple: '#c377e0', blue: '#0079bf', sky: '#00c2e0', lime: '#51e898',
+    pink: '#ff78cb', black: '#344563', green_dark: '#519839', yellow_dark: '#d9b51c',
+    orange_dark: '#d29034', red_dark: '#b04632', purple_dark: '#89609e',
+    blue_dark: '#055a8c', sky_dark: '#026aa7', lime_dark: '#49852e',
+    pink_dark: '#cd5a91', black_dark: '#091e42',
+    green_light: '#b7ddb0', yellow_light: '#f5ea92', orange_light: '#fad29c',
+    red_light: '#ef7564', purple_light: '#dfc0eb', blue_light: '#8bbdd9',
+    sky_light: '#8fdfeb', lime_light: '#b3f1d0', pink_light: '#ffb3d3', black_light: '#505f79',
+  };
+  return map[color] || '#666';
+}
+</script>
+</body>
+</html>
